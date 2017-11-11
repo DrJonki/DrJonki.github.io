@@ -1,6 +1,6 @@
 # jonki-info
 
-> Jonki's personal page
+> Jonki's Personal Page
 
 ## Build Setup
 
