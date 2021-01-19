@@ -2,8 +2,8 @@ kind: pipeline
 name: default
 
 steps:
-- build
-  image: node
+- name: build
+  image: node:14
   commands:
   - npm install
   - npm run build
