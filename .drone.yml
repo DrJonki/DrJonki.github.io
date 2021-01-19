@@ -3,7 +3,7 @@ name: default
 
 steps:
 - build
-  image: node:14
+  image: node
   commands:
   - npm install
   - npm run build
