@@ -1,0 +1,31 @@
+kind: pipeline
+name: default
+
+steps:
+- build
+  image: node:14
+  commands:
+  - npm install
+  - npm run build
+  when:
+    branch:
+    - master
+    - develop
+
+- name: publish
+  image: alpine/git
+  environment:
+    GIT_SSH_COMMAND: 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+    DEPLOY_KEY:
+      from_secret: github_deploy_key
+  commands:
+  - ssh-add - <<< "$DEPLOY_KEY"
+  - cd dist
+  - echo "jonki.info" > CMAKE
+  - git init
+  - git add -A
+  - git commit -m 'deploy'
+  - git push -f git@github.com:DrJonki/DrJonki.github.io.git deploy
+  when:
+    branch:
+    - master
