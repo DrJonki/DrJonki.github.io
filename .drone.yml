@@ -26,7 +26,7 @@ steps:
   - git init
   - git add -A
   - git commit -m 'deploy'
-  - git push -f git@github.com:DrJonki/DrJonki.github.io.git deploy
+  - git push -f git@github.com:DrJonki/DrJonki.github.io.git HEAD:deploy
   when:
     branch:
     - master
