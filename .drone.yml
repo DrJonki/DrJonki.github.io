@@ -22,7 +22,7 @@ steps:
   - eval `ssh-agent`
   - echo "$DEPLOY_KEY" | tr -d '\r' | ssh-add - > /dev/null
   - cd dist
-  - echo "jonki.info" > CMAKE
+  - echo "jonki.info" > CNAME
   - git init
   - git add -A
   - git commit -m 'deploy'
