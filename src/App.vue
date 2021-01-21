@@ -1,6 +1,6 @@
 <template>
 <div class="app">
-  <router-view></router-view>
+  <h2>Site under construction</h2>
 </div>
 </template>
 
