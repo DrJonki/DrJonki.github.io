@@ -1,5 +1,5 @@
 <template>
-  <div class="ring" :class="{ active }" :style='ringStyle' @click="$emit('click')">
+  <div class="ring" :class="{ active, hover }" :style='ringStyle' @click="$emit('click')">
     <div class="core" :class="{ active }" :style="coreStyle"></div>
 
     <div class="particle-container">
@@ -40,6 +40,11 @@ export default class GlowRing extends Vue {
   private active!: boolean;
 
   @Prop({
+    default: false
+  })
+  private hover!: boolean;
+
+  @Prop({
     default: 50
   })
   private size!: number;
@@ -59,7 +64,7 @@ export default class GlowRing extends Vue {
 
   private get coreStyle () {
     return {
-      'box-shadow': `0px 0px ${0.32 * this.size}px ${0.2 * this.size}px white`
+      'box-shadow': `0px 0px ${0.272 * this.size}px ${0.22 * this.size}px white`
     }
   }
 
@@ -153,22 +158,16 @@ export default class GlowRing extends Vue {
   justify-content: center;
   align-items: center;
 
-  &:hover:not(.active) {
+  &.hover:not(.active) {
     box-shadow: 0px 0px 10px 1px white;
   }
 
-  &.active, &:hover {
+  &.active, &.hover {
     border-color: white;
   }
 
   .core {
-    $size: 25%;
-
     transition: opacity .75s ease;
-
-    width: $size;
-    height: $size;
-    background: white;
     border-radius: 50%;
     opacity: 0;
 
