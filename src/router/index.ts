@@ -1,12 +1,13 @@
 import Vue from 'vue'
 import VueRouter, { RouteConfig } from 'vue-router'
-import Home from '@/views/Home.vue'
+import ContentView from '@/views/Content.vue'
 import ContentPage from '@/components/ContentPage.vue'
 
 Vue.use(VueRouter)
 
 const ctx = require.context('~/', true, /\.md/)
 export const rootPages = [
+  'index',
   'about',
   'experience',
   'projects',
@@ -15,29 +16,28 @@ export const rootPages = [
 ]
 
 interface Content {
-  html: string[];
+  contentHtml: string[];
+  showIndex: boolean;
 }
-const content: Content[] = rootPages.map(page => {
+const content: Content[] = rootPages.map((page, idx) => {
   const pages = ctx.keys().filter(key => key.includes(`/${page}/`))
 
   return {
-    html: pages.sort().map(subPage => ctx(subPage))
+    contentHtml: pages.sort().map(subPage => ctx(subPage)),
+    showIndex: idx !== 0
   }
 })
 
-const routes: Array<RouteConfig> = [
+const routes: RouteConfig[] = [
   {
     path: '/',
     name: 'Home',
-    component: Home,
-    redirect: '/about',
+    component: ContentView,
     children: rootPages.map((page, idx) => ({
       path: page,
       name: page,
       component: ContentPage,
-      props: {
-        contentHtml: content[idx].html
-      }
+      props: content[idx]
     }))
   }
 ]

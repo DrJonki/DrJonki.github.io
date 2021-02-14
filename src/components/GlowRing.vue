@@ -17,6 +17,7 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
+import colors from '@/scss/colors.scss'
 
 interface Particle {
   direction: [number, number];
@@ -64,7 +65,7 @@ export default class GlowRing extends Vue {
 
   private get coreStyle () {
     return {
-      'box-shadow': `0px 0px ${0.272 * this.size}px ${0.22 * this.size}px white`
+      'box-shadow': `0px 0px ${0.272 * this.size}px ${0.22 * this.size}px ${colors['secondary-color']}`
     }
   }
 
@@ -145,6 +146,8 @@ export default class GlowRing extends Vue {
 </script>
 <style lang="scss" scoped>
 
+@import "@/scss/colors.scss";
+
 .ring {
   transition: box-shadow .5s ease, border-color .75s ease;
 
@@ -159,11 +162,11 @@ export default class GlowRing extends Vue {
   align-items: center;
 
   &.hover:not(.active) {
-    box-shadow: 0px 0px 10px 1px white;
+    box-shadow: 0px 0px 10px 1px $main-color;
   }
 
   &.active, &.hover {
-    border-color: white;
+    border-color: $main-color;
   }
 
   .core {
@@ -188,8 +191,8 @@ export default class GlowRing extends Vue {
   width: $particleSize;
   height: $particleSize;
   border-radius: 25%;
-  background: white;
-  box-shadow: 0px 0px 10px 1px white;
+  background: $main-color;
+  box-shadow: 0px 0px 10px 1px $main-color;
   transform-origin: center;
   left: -$particleSize / 2;
   top: -$particleSize / 2;
