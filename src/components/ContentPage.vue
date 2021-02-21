@@ -1,21 +1,20 @@
 <template>
-  <div class="content-container">
+  <div class="content-container" ref="content-container">
     <div class="content" ref="content">
       <div
         v-for="(html, idx) in contentHtml" :key="idx"
+        ref="content-item"
         v-html="html"
       ></div>
       <div class="bottom-padding"></div>
     </div>
     <transition name="fade" appear>
-      <div v-show="showIndex && indexReady" class="index">
-        <component
-          v-for="({ tag, text }, idx) in indexItems" :key="idx"
-          :is="tag"
-        >
-          {{ text }}
-        </component>
-      </div>
+      <ContentIndex
+        v-if="indexItems.length > 0"
+        :index-items="indexItems"
+        :scroll-position="scrollPos"
+        :content-height="scrollHeight"
+      ></ContentIndex>
     </transition>
   </div>
 </template>
@@ -24,13 +23,13 @@
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
+import ContentIndex, { IndexItem } from '@/components/ContentIndex.vue'
 
-interface IndexItem {
-  tag: string;
-  text: string;
-}
-
-@Component
+@Component({
+  components: {
+    ContentIndex
+  }
+})
 export default class ContentPage extends Vue {
   @Prop({
     required: true,
@@ -41,37 +40,46 @@ export default class ContentPage extends Vue {
   @Prop({ required: true })
   private showIndex!: boolean;
 
-  private indexReady = false;
-
   private indexItems: IndexItem[] = []
+  private scrollHeight = 0
+  private scrollPos = 0
+
+  private onScroll (ev: Event) {
+    this.scrollPos = (ev.target as Element).scrollTop
+  }
 
   private mounted () {
+    if (!this.showIndex) {
+      return
+    }
+
     this.$nextTick(() => {
-      const contentEl = [this.$refs.content].flat()[0] as Element
-      const contentElHeaders = contentEl.querySelectorAll('h1, h2, h3')
-      const headerEls: Element[] = []
-
-      const replacementTags: { [tag: string]: string } = {
-        H1: 'h4',
-        H2: 'h5',
-        H3: 'h6'
-      }
-
-      for (let i = 0; i < contentElHeaders.length; ++i) {
-        headerEls.push(contentElHeaders[i])
-      }
-
-      this.indexItems = headerEls.map(el => ({
-        tag: replacementTags[el.tagName],
-        text: el.textContent ?? ''
-      }))
-
-      console.log(contentElHeaders, this.indexItems)
+      const containerEl = [this.$refs['content-container']].flat()[0] as Element
+      containerEl.addEventListener('scroll', this.onScroll)
 
       setTimeout(() => {
-        this.indexReady = true
+        const contentEl = [this.$refs.content].flat()[0] as Element
+        const replacementTags: { [tag: string]: IndexItem['tag'] } = {
+          H1: 'h4',
+          H2: 'h5',
+          H3: 'h6'
+        }
+
+        this.indexItems = Array.from(contentEl.querySelectorAll('h1, h2, h3')).map(el => ({
+          tag: replacementTags[el.tagName],
+          text: el.textContent ?? ''
+        }))
       }, 500)
+
+      this.scrollHeight = [this.$refs['content-item']]
+        .flat()
+        .reduce((accum, el) => accum + (el as Element).scrollHeight, 0)
     })
+  }
+
+  private beforeDestroy () {
+    const containerEl = [this.$refs['content-container']].flat()[0] as Element
+    containerEl.removeEventListener('scroll', this.onScroll)
   }
 }
 
@@ -97,23 +105,7 @@ export default class ContentPage extends Vue {
   text-align: justify;
 
   .bottom-padding {
-    height: 0;
-  }
-}
-
-.index {
-  position: fixed;
-  right: 100px;
-  margin-left: auto;
-  margin-top: 100px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-
-  > * {
-    color: #777;
-    margin: 0;
-    padding: 0;
+    height: 300px;
   }
 }
 

@@ -27,10 +27,24 @@
       </div>
     </div>
 
-    <div
-      v-for="(wire, idx) in wires" :key="idx"
-      class="wire"
-    ></div>
+    <svg class="wire-svg" width="200" height="100%">
+      <template v-for="[page, wire] in wires">
+        <filter :key="`blurfilter-${page}`" :id="`blurfilter-${page}`">
+          <feGaussianBlur :stdDeviation="(hoverCounter[page] || 0) * 5" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        <polyline
+          :key="page"
+          :points="wire"
+          :style="{ stroke: wireColor(page) }"
+          :filter="`url(#blurfilter-${page})`"
+        ></polyline>
+      </template>
+    </svg>
 
     <div class="content">
       <router-view></router-view>
@@ -39,17 +53,13 @@
     <h6 class="copyright-notice">© 2021 Joona Tiinanen</h6>
   </div>
 </template>
-
 <script lang="ts">
 
 import Vue from 'vue'
 import Component from 'vue-class-component'
 import GlowRing from '@/components/GlowRing.vue'
 import { rootPages } from '@/router/index'
-
-interface Wire {
-  associations: string[];
-}
+import { clamp } from 'lodash'
 
 @Component({
   components: {
@@ -59,7 +69,8 @@ interface Wire {
 export default class App extends Vue {
   private resizeListener!: (this: Window, ev: UIEvent) => unknown;
 
-  private hoverStatus: { [key: string]: boolean} = {};
+  private hoverStatus: { [key: string]: boolean } = {};
+  private hoverCounter: { [key: string]: number } = {};
   private ready = false;
   private wires: [string, string][] = []
 
@@ -93,7 +104,7 @@ export default class App extends Vue {
     const extraProps: { [key: string]: {} } = {
       index: {
         size: 60,
-        titleEl: 'h2'
+        title: ''
       }
     }
 
@@ -112,20 +123,34 @@ export default class App extends Vue {
 
     const gap = 20
     const foldOffset = 20
+    const shiftOffset = 10
 
     const topRect = getRingElem('index').getBoundingClientRect()
-    const startX = (topRect.left + topRect.right) / 2
-    const startY = topRect.bottom + gap
+    const wiredPages = rootPages.slice(1)
 
-    this.wires = rootPages.slice(1).map(page => {
+    this.wires = wiredPages.reverse().map((page, idx) => {
       const elemRect = getRingElem(page).getBoundingClientRect()
+      const offsetLowerBound = -Math.floor(wiredPages.length / 2)
+      const offsetAdvance = offsetLowerBound + idx
+      const offset = offsetAdvance * shiftOffset
+      const startX = (topRect.left + topRect.right) / 2 + offset
+      const startY = topRect.bottom + gap + (Math.abs(offsetLowerBound) - Math.abs(idx - Math.abs(offsetLowerBound))) * (gap / 6)
       const endX = elemRect.left - gap
       const endY = (elemRect.top + elemRect.bottom) / 2
 
-      return [page, [`${startX},${startY}`, `${startX},${endY - foldOffset}`, `${startX + foldOffset},${endY}`, `${endX},${endY}`].join(' ')]
+      return [page, [
+        `${startX},${startY}`,
+        `${startX},${endY - foldOffset}`,
+        `${startX + foldOffset},${endY}`,
+        `${endX},${endY}`
+      ].join(' ')]
     })
 
     this.ready = true
+  }
+
+  private onResize () {
+    this.calcWires()
   }
 
   private setHover (route: string, hover: boolean) {
@@ -138,7 +163,7 @@ export default class App extends Vue {
     }
 
     setTimeout(() => {
-      this.$router.push({ name: 'about' })
+      this.$router.push({ name: 'index' })
     }, 1000)
   }
 
@@ -149,54 +174,30 @@ export default class App extends Vue {
       this.resizeListener = () => {
         this.calcWires()
       }
-      window.addEventListener('resize', this.resizeListener)
+      window.addEventListener('resize', this.onResize)
+
+      const secondsPerFrame = 1 / 60
+      setInterval(() => {
+        rootPages.slice(1).forEach(key => {
+          const time = 0.5 // animation seconds
+          const previousValue = this.hoverCounter[key] ?? 0
+
+          this.$set(
+            this.hoverCounter,
+            key,
+            clamp(previousValue + (this.isActiveOrHovering(key) ? 1 : -1) * secondsPerFrame, 0, time)
+          )
+        })
+      }, secondsPerFrame * 1000)
     })
   }
 
   private beforeDestroy () {
-    window.removeEventListener('resize', this.resizeListener)
+    window.removeEventListener('resize', this.onResize)
   }
 }
 
 </script>
-
-<style lang="scss">
-
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;300;400;500;600;700;800;900&display=swap');
-
-html, body {
-  width: 100%;
-  height: 100%;
-}
-
-h1 {
-  font-size: 4rem;
-  font-weight: 100;
-}
-h2 {
-  font-size: 3rem;
-  font-weight: 300;
-}
-h3 {
-  font-size: 2rem;
-  font-weight: 400;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  color: #ddd;
-}
-
-body {
-  overflow: hidden;
-  font-family: 'Inconsolata', monospace;
-  font-weight: 500;
-  background: #0f0f0f;
-  color: #bbb;
-  margin: 0;
-}
-
-</style>
-
 <style lang="scss" scoped>
 
 @import "@/scss/colors.scss";
@@ -257,6 +258,20 @@ body {
 .content {
   margin-left: 200px;
   flex: 1;
+}
+
+.wire-svg {
+  position: absolute;
+  z-index: -10;
+
+  polyline {
+    transition: stroke .75s ease;
+
+    fill: none;
+    stroke: gray;
+    stroke-linecap: round;
+    stroke-width: 1.5;
+  }
 }
 
 .copyright-notice {

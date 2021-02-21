@@ -14,17 +14,22 @@ export const rootPages = [
   'contact',
   'links'
 ]
+const noIndexPages = [
+  'index',
+  'contact',
+  'links'
+]
 
 interface Content {
   contentHtml: string[];
   showIndex: boolean;
 }
-const content: Content[] = rootPages.map((page, idx) => {
+const content: Content[] = rootPages.map(page => {
   const pages = ctx.keys().filter(key => key.includes(`/${page}/`))
 
   return {
     contentHtml: pages.sort().map(subPage => ctx(subPage)),
-    showIndex: idx !== 0
+    showIndex: !noIndexPages.includes(page)
   }
 })
 

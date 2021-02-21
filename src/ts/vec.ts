@@ -7,8 +7,20 @@ export class Vec2 {
     this.y = _y
   }
 
+  public magnitude () {
+    return Math.sqrt(this.magnitudeSq())
+  }
+
+  public magnitudeSq () {
+    return this.x * this.x + this.y * this.y
+  }
+
   public sum (other: Vec2) {
     return new Vec2(this.x + other.x, this.y + other.y)
+  }
+
+  public subtraction (other: Vec2) {
+    return new Vec2(this.x - other.x, this.y - other.y)
   }
 
   public product (mult: number) {

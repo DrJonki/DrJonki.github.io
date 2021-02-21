@@ -144,7 +144,7 @@ export default class GlowRing extends Vue {
 @import "@/scss/colors.scss";
 
 .ring {
-  transition: box-shadow .5s ease, border-color .75s ease;
+  transition: box-shadow .75s ease, border-color .75s ease;
 
   border-radius: 50%;
   border-style: solid;
