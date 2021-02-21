@@ -18,12 +18,13 @@ import Vue from 'vue'
 import Component from 'vue-class-component'
 import { Prop } from 'vue-property-decorator'
 import colors from '@/scss/colors.scss'
+import { Vec2 } from '@/ts/vec'
 
 interface Particle {
-  direction: [number, number];
-  position: [number, number];
-  rotationDirection: [number, number];
-  rotation: [number, number];
+  direction: Vec2;
+  position: Vec2;
+  rotationDirection: Vec2;
+  rotation: Vec2;
   initialLifetime: number;
   lifetimeLeft: number;
   id: number;
@@ -74,8 +75,11 @@ export default class GlowRing extends Vue {
     const rot = particle.rotation
 
     return {
-      opacity: particle.lifetimeLeft / particle.initialLifetime,
-      transform: `translate(${pos[0]}px, ${pos[1]}px) rotateX(${rot[0]}rad) rotateY(${rot[1]}rad)`
+      opacity: Math.min(
+        (particle.initialLifetime - particle.lifetimeLeft) / 0.2,
+        particle.lifetimeLeft / particle.initialLifetime * 1.2
+      ),
+      transform: `translate(${pos.x}px, ${pos.y}px) rotateX(${rot.x}rad) rotateY(${rot.x}rad)`
     }
   }
 
@@ -95,25 +99,16 @@ export default class GlowRing extends Vue {
 
       const LIFETIME = 1 + Math.random()
 
-      const rotate = ([x, y]: [number, number], radians: number) => {
-        const cos = Math.cos(radians)
-        const sin = Math.sin(radians)
-
-        return [
-          cos * x - sin * y, sin * x + cos * y
-        ] as [number, number]
-      }
-
-      const initialPosNorm = rotate([1, 0], Math.random() * 2 * Math.PI)
-      const initialPos = initialPosNorm.map(val => val * this.size / 2) as [number, number]
-      const directionNorm = rotate(initialPosNorm, (Math.random() - 0.5) * Math.PI * 0.75)
-      const rotationNorm = rotate([1, 0], Math.random() * 2 * Math.PI)
+      const initialPosNorm = new Vec2(1, 0).rotated(Math.random() * 2 * Math.PI)
+      const initialPos = initialPosNorm.product(this.size / 2)
+      const directionNorm = initialPosNorm.rotated((Math.random() - 0.5) * Math.PI * 0.75)
+      const rotationNorm = new Vec2(1, 0).rotated(Math.random() * 2 * Math.PI)
 
       this.mParticles.push({
-        direction: directionNorm.map(val => val * PARTICLE_SPEED * this.ringSizeMult) as [number, number],
-        position: initialPos.map((val, idx) => val + initialPosNorm[idx]) as [number, number],
-        rotationDirection: rotationNorm.map(val => val * SECONDS_PER_FRAME * 3) as [number, number],
-        rotation: [0, 0],
+        direction: directionNorm.product(PARTICLE_SPEED * this.ringSizeMult),
+        position: initialPos.sum(initialPosNorm),
+        rotationDirection: rotationNorm.product(SECONDS_PER_FRAME * 3),
+        rotation: new Vec2(0, 0),
         initialLifetime: LIFETIME,
         lifetimeLeft: LIFETIME,
         id: idCounter++
@@ -129,8 +124,8 @@ export default class GlowRing extends Vue {
         if (particle.lifetimeLeft <= 0) {
           this.mParticles.splice(i, 1)
         } else {
-          particle.position = particle.direction.map((val, idx) => particle.position[idx] + val) as [number, number]
-          particle.rotation = particle.rotationDirection.map((val, idx) => particle.rotation[idx] + val) as [number, number]
+          particle.position = particle.direction.sum(particle.position)
+          particle.rotation = particle.rotationDirection.sum(particle.rotation)
           ++i
         }
       }
