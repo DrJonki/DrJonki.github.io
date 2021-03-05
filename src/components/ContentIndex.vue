@@ -43,26 +43,36 @@ export default class ContentIndex extends Vue {
   private scrollPosition!: number;
 
   /** Header element emphasis on a scale from 0 to 1 */
-  private mElEmphasis: { [index: number]: number } = []
+  private mElEmphasisMouse: { [index: number]: number } = []
 
   private elStyle (idx: number) {
-    const emphasis = this.mElEmphasis[idx] ?? 0
+    const emphasis = Math.max(this.mElEmphasisMouse[idx] ?? 0, this.scrollPosEmphasis(idx) ?? 0)
+    const nonEmphasizedRgb = 0xbb
+    const rgb = nonEmphasizedRgb + (255 - nonEmphasizedRgb) * emphasis
+    const rgbStr = `rgb(${rgb}, ${rgb}, ${rgb})`
 
     return {
-      'line-height': `${1 + emphasis}em`
+      padding: `${emphasis * 0.25}px 0`,
+      color: rgbStr,
+      'text-shadow': `0 0 ${emphasis * 3}px white`
     }
   }
 
+  private scrollPosEmphasis (idx: number) {
+    return 0
+  }
+
   private onMouseMove (ev: MouseEvent) {
-    const threshold = 75
+    const outsideThresholdY = 10
 
     for (let i = 0; i < this.indexItems.length; ++i) {
       const itemEl = [this.$refs[`item-${i}`]].flat()[0] as Element
       const rect = itemEl.getBoundingClientRect()
-      const center = new Vec2(rect.right, (rect.top + rect.bottom) / 2)
-      const dist = new Vec2(ev.clientX, ev.clientY).subtraction(center).magnitude()
+      const halfHeight = rect.height / 2
+      const centerY = (rect.top + rect.bottom) / 2
+      const dist = Math.abs(centerY - ev.clientY)
 
-      this.$set(this.mElEmphasis, i, clamp(1 - dist / threshold, 0, 1))
+      this.$set(this.mElEmphasisMouse, i, clamp(dist / halfHeight + 1 - dist / thresholdY, 0, 1))
     }
   }
 
